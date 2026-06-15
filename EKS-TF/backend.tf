@@ -3,7 +3,7 @@ terraform {
     bucket         = "jenkins-server-tf-state-274955213592"
     region         = "ap-south-1"
     key            = "EKS-DevSecOps-Tetris-Project/EKS-TF/terraform.tfstate"
-    dynamodb_table = "LockID"
+    dynamodb_table = "jenkins-server-tf-state-lock"
     encrypt        = true
   }
   required_version = ">=0.13.0"
