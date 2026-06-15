@@ -15,7 +15,7 @@ pipeline{
         }
         stage('Checkout from Git'){
             steps{
-                git branch: 'main', url: 'https://github.com/uniquesreedhar/Reddit-Project.git'
+                git branch: 'main', url: 'https://github.com/Rajesh-210/Reddit-Project.git'
             }
         }
         stage('Install Dependencies') {
@@ -54,28 +54,28 @@ pipeline{
                 script{
                    withDockerRegistry(credentialsId: 'docker', toolName: 'docker'){
                        sh "docker build -t reddit ."
-                       sh "docker tag reddit sreedhar8897/reddit:${BUILD_NUMBER} "
-                       sh "docker push sreedhar8897/reddit:${BUILD_NUMBER} "
+                       sh "docker tag reddit chilukurir/reddit:${BUILD_NUMBER} "
+                       sh "docker push chilukurir/reddit:${BUILD_NUMBER} "
                     }
                 }
             }
         }
         stage("TRIVY"){
             steps{
-                sh "trivy image sreedhar8897/reddit:latest > trivy.txt"
+                sh "trivy image chilukurir/reddit:latest > trivy.txt"
             }
         }
         stage('Update Deployment file') {
             environment {
                 GIT_REPO_NAME = "Reddit-Project"
-                GIT_USER_NAME = "uniquesreedhar"
+                GIT_USER_NAME = "Rajesh-210"
             }
             steps {
                 dir('K8s'){
-                    withCredentials([string(credentialsId: 'githubcred', variable: 'GITHUB_TOKEN')]) {
+                    withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
                         sh '''
-                            git config user.email "madithatisreedhar123@gmail.com"
-                            git config user.name "uniquesreedhar"
+                            git config user.email "rajeshchilukuri210@gmail.com"
+                            git config user.name "Rajesh-210"
                             BUILD_NUMBER=${BUILD_NUMBER}
                             echo $BUILD_NUMBER
                             imageTag=$(grep -oP '(?<=reddit:)[^ ]+' deployment.yml)
@@ -87,6 +87,44 @@ pipeline{
                         '''
                     }
                 }
+            }
+        }
+    }
+    post {
+        always {
+            script {
+                // Get job name, build number, and pipeline status
+                def jobName = env.JOB_NAME
+                def buildNumber = env.BUILD_NUMBER
+                def pipelineStatus = currentBuild.result ?: 'UNKNOWN'
+                pipelineStatus = pipelineStatus.toUpperCase()
+
+                // Set the banner color based on the status
+                def bannerColor = pipelineStatus == 'SUCCESS' ? 'green' : 'red'
+
+                // HTML body for the email
+                def body = """
+                <body>
+                    <div style="border: 2px solid ${bannerColor}; padding: 10px;">
+                        <h3 style="color: ${bannerColor};">
+                            Pipeline Status: ${pipelineStatus}
+                        </h3>
+                        <p>Job: ${jobName}</p>
+                        <p>Build Number: ${buildNumber}</p>
+                        <p>Status: ${pipelineStatus}</p>
+                    </div>
+                </body>
+                """
+
+                // Send email notification
+                emailext(
+                    subject: "${jobName} - Build ${buildNumber} - ${pipelineStatus}",
+                    body: body,
+                    to: 'chilukurirajesh@priaccinnovations.ai',
+                    from: 'jenkins@example.com',
+                    replyTo: 'jenkins@example.com',
+                    mimeType: 'text/html'
+                )
             }
         }
     }
