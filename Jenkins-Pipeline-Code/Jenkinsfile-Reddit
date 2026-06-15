@@ -112,7 +112,7 @@ pipeline{
                                 aws eks update-kubeconfig --name Reddit-EKS-Cluster --region ap-south-1
                                 kubectl apply -f deployment.yml
                                 kubectl apply -f service.yml
-                                kubectl rollout status deployment/reddit-deployment --timeout=120s
+                                kubectl rollout status deployment/reddit-clone-deployment --timeout=120s
                                 echo "====== Deployed Pods ======"
                                 kubectl get pods
                                 echo "====== Service Details ======"
