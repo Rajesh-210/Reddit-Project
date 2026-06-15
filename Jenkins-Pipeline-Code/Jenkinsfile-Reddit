@@ -41,8 +41,8 @@ pipeline{
         stage('OWASP FS SCAN') {
             steps {
                 withCredentials([string(credentialsId: 'nvd-api-key', variable: 'NVD_API_KEY')]) {
-                dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit --nvdApiKey ${NVD_API_KEY}', odcInstallation: 'DP-Check'
-                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+                    dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit --nvdApiKey ${NVD_API_KEY}', odcInstallation: 'DP-Check'
+                    dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
                 }
             }
         }
@@ -55,19 +55,24 @@ pipeline{
             steps{
                 script{
                     withCredentials([usernamePassword(credentialsId: 'docker', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-                       sh "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
-                       sh "docker build -t reddit ."
-                       sh "docker tag reddit ${DOCKER_USERNAME}/reddit:${BUILD_NUMBER}"
-                       sh "docker tag reddit ${DOCKER_USERNAME}/reddit:latest"
-                       sh "docker push ${DOCKER_USERNAME}/reddit:${BUILD_NUMBER}"
-                       sh "docker push ${DOCKER_USERNAME}/reddit:latest"
+                        sh "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
+                        sh "docker build -t reddit ."
+                        sh "docker tag reddit ${DOCKER_USERNAME}/reddit:${BUILD_NUMBER}"
+                        sh "docker tag reddit ${DOCKER_USERNAME}/reddit:latest"
+                        sh "docker push ${DOCKER_USERNAME}/reddit:${BUILD_NUMBER}"
+                        sh "docker push ${DOCKER_USERNAME}/reddit:latest"
                     }
                 }
             }
         }
         stage("TRIVY"){
             steps{
-                sh "trivy image chilukurir/reddit:latest > trivy.txt"
+                script{
+                    withCredentials([usernamePassword(credentialsId: 'docker', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                        sh "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
+                        sh "trivy image ${DOCKER_USERNAME}/reddit:${BUILD_NUMBER} > trivy.txt"
+                    }
+                }
             }
         }
         stage('Update Deployment file') {
@@ -90,6 +95,30 @@ pipeline{
                             git commit -m "Update deployment Image to version \${BUILD_NUMBER}"
                             git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
                         '''
+                    }
+                }
+            }
+        }
+        stage('Deploy to Kubernetes'){
+            steps{
+                script{
+                    withCredentials([
+                        aws(credentialsId: 'aws-credentials',
+                            accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                            secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')
+                    ]){
+                        dir('K8s'){
+                            sh '''
+                                aws eks update-kubeconfig --name Reddit-EKS-Cluster --region ap-south-1
+                                kubectl apply -f deployment.yml
+                                kubectl apply -f service.yml
+                                kubectl rollout status deployment/reddit-deployment --timeout=120s
+                                echo "====== Deployed Pods ======"
+                                kubectl get pods
+                                echo "====== Service Details ======"
+                                kubectl get svc
+                            '''
+                        }
                     }
                 }
             }
