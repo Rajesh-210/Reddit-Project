@@ -57,8 +57,10 @@ pipeline{
                     withCredentials([usernamePassword(credentialsId: 'docker', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
                        sh "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
                        sh "docker build -t reddit ."
-                       sh "docker tag reddit chilukurir/reddit:${BUILD_NUMBER} "
-                       sh "docker push chilukurir/reddit:${BUILD_NUMBER} "
+                       sh "docker tag reddit ${DOCKER_USERNAME}/reddit:${BUILD_NUMBER}"
+                       sh "docker tag reddit ${DOCKER_USERNAME}/reddit:latest"
+                       sh "docker push ${DOCKER_USERNAME}/reddit:${BUILD_NUMBER}"
+                       sh "docker push ${DOCKER_USERNAME}/reddit:latest"
                     }
                 }
             }
