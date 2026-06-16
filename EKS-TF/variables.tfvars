@@ -10,14 +10,14 @@ security-group-name = "jenkins-server-sg"
 
 rt-name2            = "Jenkins-route-table2"
 
-iam-role-eks        = "Reddit-iam-role-eks"
+iam-role-eks        = "Chatbot-iam-role-eks"
 
-iam-role-node       = "Reddit-iam-role-ec2"
+iam-role-node       = "Chatbot-iam-role-ec2"
 
-iam-policy-eks      = "Reddit-iam-policy-eks"
+iam-policy-eks      = "Chatbot-iam-policy-eks"
 
-iam-policy-node     = "Reddit-iam-policy-node"
+iam-policy-node     = "Chatbot-iam-policy-node"
 
-cluster-name        = "Reddit-EKS-Cluster"
+cluster-name        = "Chatbot-EKS-Cluster"
 
-eksnode-group-name  = "Reddit-Node-Group"
+eksnode-group-name  = "Chatbot-Node-Group"
